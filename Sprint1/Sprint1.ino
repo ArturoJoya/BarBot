@@ -9,6 +9,13 @@
  * Since we already have 2 motors hooked up, we would be able to use up to 4 pumps with the two LEDs and two buttons on the UNO R3
  */
 
+// Libraries for User Interface (i2c LDC)
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+
+// User interface setup
+LiquidCrystal_I2C lcd(0x27,20,4); 
+
 // State LEDs
 const int RED = 13;
 const int YELLOW = 12;
@@ -197,6 +204,8 @@ void done(){
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
+  lcd.init();
+  lcd.backlight();
   pinMode(RED, OUTPUT);
   pinMode(YELLOW, OUTPUT);
   pinMode(GREEN, OUTPUT);
@@ -220,6 +229,15 @@ void setup() {
 }
 
 void loop() {
+  // User interface (i2c LDC)
+  lcd.setCursor(0,0);
+  lcd.print(state);
+  if(state == SELECTING){
+    lcd.setCursor(0,0);
+    lcd.print("Current Drink:");
+    lcd.setCursor(0,1);
+    lcd.print(drink_choice);
+  }
   // A state machine that loops through the process of dispensing a drink.
   switch(state){
     case READY:
