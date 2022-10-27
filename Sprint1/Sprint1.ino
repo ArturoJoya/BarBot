@@ -1,20 +1,19 @@
-/* Sprint 1 firmware that carries the 3 main states - idle/ready, selecting, and creating.
- * In case we run out of time, instead of actuating the motors, we will turn on LEDs that will simulate the pump motors running.
- * A red LED will represent the READY state. This will blink for 10 seconds in the sSELECTING state before returning to READY.
- * A yellow LED will turn on when the barbot is mixing the drink.
- * A Green LED wiil turn on symbolizing that the drink has been dispensed. This will remain lit for 5 seconds before returning to READY.
+/*
+ * Final Sprint 1 Firmware Implementation
+ * State Machine has 4 States: Ready/Idle; Selecting; Dispensing; Done.
+ * These states are indicated through LEDs and an I2C display
  * 
- * For a future design with 4 pumps, we may consolidate the Yellow LED and the Confirm Button, and instead press the select twice to confirm. 
- * Since the Blue and White LEDs (our drinks for now) won't be needed, these consolidations would open up 2 motors.
- * Since we already have 2 motors hooked up, we would be able to use up to 4 pumps with the two LEDs and two buttons on the UNO R3
+ * Current Implementation uses 2 motors to control 2 pumps.
+ * For future implementation with more pumps, we would consolidate some of the LEDs and consolidate
+ * the confirm button to be the same as the current select button
  */
 
-// Libraries for User Interface (i2c LDC)
+// Libraries for User Interface (i2c LCD)
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 
 // User interface setup
-LiquidCrystal_I2C lcd(0x27,20,4); 
+LiquidCrystal_I2C lcd(0x26,16,1); 
 
 // State LEDs
 const int RED = 13;
@@ -23,6 +22,13 @@ const int GREEN = 11;
 // Pump LEDs - To be replaced by the stepper motor pinouts
 const int BLUE = 10;
 const int WHITE = 9;
+// Pump Motors (2)
+const int dirPin = 2;
+const int stepPin = 3;
+const int dir2Pin = 4;
+const int step2Pin = 5;
+// Motor Parameters
+const int stepsPerRevolution = 200;
 // Buttons
 const int SELECT = 8;
 const int CONFIRM = 7;
@@ -66,17 +72,15 @@ void idle(){
   if (state != prior_state){
     prior_state = state;
     digitalWrite(RED, HIGH);
+    lcd.setCursor(4,0);
+    lcd.print("READY...");
   }
   if(digitalRead(SELECT) == HIGH){
     while(digitalRead(SELECT) == HIGH){}
     state = SELECTING;
+    lcd.clear();
   }
 }
-
-//void parse_choice(raw){
-  // Interpret analog to fit choices 0 (NONE), 1, 2, or 3
-//  drink_choice = raw / 255;
-//}
 
 void selecting(){
   // Read the analog once, and blink the LED mapping to the choice.
@@ -88,6 +92,11 @@ void selecting(){
     prior_state = state;
     choice_raw = analogRead(POTSELECT);
     drink_choice = choice_raw/255;
+    lcd.setCursor(0,0);
+    lcd.print("Current Drink:");
+    lcd.print(drink_choice);
+    lcd.setCursor(0,1);
+    lcd.print("Please Confirm");
     sel_time = millis();
     sel_count = 0;
   }
@@ -124,9 +133,23 @@ void selecting(){
     digitalWrite(RED, LOW);
     digitalWrite(YELLOW, LOW);
     digitalWrite(GREEN, LOW);
+    lcd.clear();
   }
 }
 
+void step_1(){
+  digitalWrite(stepPin, HIGH);
+  delayMicroseconds(2000);
+  digitalWrite(stepPin, LOW);
+  delayMicroseconds(2000);
+}
+
+void step_2(){
+  digitalWrite(step2Pin, HIGH);
+  delayMicroseconds(2000);
+  digitalWrite(step2Pin, LOW);
+  delayMicroseconds(2000);
+}
 
 void dispensing(){
   // What to do while dispensing
@@ -137,6 +160,10 @@ void dispensing(){
     prior_state = state;
     Serial.println(drink_choice);
     digitalWrite(YELLOW, HIGH);
+    digitalWrite(dirPin, HIGH);
+    digitalWrite(dir2Pin, HIGH);
+    lcd.setCursor(2,0);
+    lcd.print("DISPENSING..");
     dispense_time = millis();
   }
 
@@ -146,9 +173,11 @@ void dispensing(){
   if(drink_choice == 1){
     if(t < dispense_time + d1p1dur){
       digitalWrite(BLUE, HIGH);
-    }
+      step_1();
+      }
     if(t < dispense_time + d1p2dur){
       digitalWrite(WHITE, HIGH);
+      step_2();
     }
     if(t > dispense_time + d1p1dur && t > dispense_time + d1p2dur){
       state = DONE;
@@ -156,9 +185,11 @@ void dispensing(){
   }else if(drink_choice == 2){
     if(t < dispense_time + d2p1dur){
       digitalWrite(BLUE, HIGH);
+      step_1();
     }
     if(t < dispense_time + d2p2dur){
       digitalWrite(WHITE, HIGH);
+      step_2();
     }
     if(t > dispense_time + d2p1dur && t > dispense_time + d2p2dur){
       state = DONE;
@@ -166,9 +197,11 @@ void dispensing(){
   }else{
     if(t < dispense_time + d3p1dur){
       digitalWrite(BLUE, HIGH);
+      step_1();
     }
     if(t < dispense_time + d3p2dur){
       digitalWrite(WHITE, HIGH);
+      step_2();
     }
     if(t > dispense_time + d3p1dur && t > d3p2dur){
       state = DONE;
@@ -185,7 +218,10 @@ void dispensing(){
   if(state != prior_state){
     digitalWrite(YELLOW, LOW);
     digitalWrite(BLUE, LOW); // The actual implementation will simply turn off the steppers
+    digitalWrite(stepPin, LOW);
     digitalWrite(WHITE, LOW);
+    digitalWrite(step2Pin, LOW);
+    lcd.clear();
   }
 }
 
@@ -193,24 +229,30 @@ void done(){
   // What to do when the barbot has finished.
   if(state != prior_state){
     prior_state = state;
+    lcd.setCursor(5,0);
+    lcd.print("DONE!!!");
     digitalWrite(GREEN, HIGH);
   }
   delay(5000);
   digitalWrite(GREEN, LOW);
-  //int drink_choice;
+  lcd.clear();
   state = READY;
 }
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
-  lcd.init();
+  lcd.begin();
   lcd.backlight();
   pinMode(RED, OUTPUT);
   pinMode(YELLOW, OUTPUT);
   pinMode(GREEN, OUTPUT);
   pinMode(BLUE, OUTPUT);
   pinMode(WHITE, OUTPUT);
+  pinMode(stepPin, OUTPUT);
+  pinMode(dirPin, OUTPUT);
+  pinMode(step2Pin, OUTPUT);
+  pinMode(dir2Pin, OUTPUT);
 
   pinMode(SELECT, INPUT);
   pinMode(CONFIRM, INPUT);
@@ -229,15 +271,6 @@ void setup() {
 }
 
 void loop() {
-  // User interface (i2c LDC)
-  lcd.setCursor(0,0);
-  lcd.print(state);
-  if(state == SELECTING){
-    lcd.setCursor(0,0);
-    lcd.print("Current Drink:");
-    lcd.setCursor(0,1);
-    lcd.print(drink_choice);
-  }
   // A state machine that loops through the process of dispensing a drink.
   switch(state){
     case READY:
