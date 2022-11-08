@@ -16,7 +16,7 @@ AccelStepper pump2 = AccelStepper(mit, step2Pin, dir2Pin);
 void setup() {
   // Declare pins as output:
   Serial.begin(115200);
-  pump1.setMaxSpeed(000);
+  pump1.setMaxSpeed(800);
   pump1.setAcceleration(50);
   pump1.setSpeed(200);
   pump1.moveTo(1000);
