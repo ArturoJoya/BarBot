@@ -38,6 +38,8 @@ const int CONFIRM = 7;
 const int RESET = 6;
 // Selection Potentiometer
 const int POTSELECT = 1;
+//
+const array drinkChoice = ["Soda Water","Gin","Gin Fizz"];
 
 // State timings
 uint32_t blink_time;
@@ -77,7 +79,7 @@ void idle(){
     prior_state = state;
     digitalWrite(RED, HIGH);
     lcd.setCursor(4,0);
-    lcd.print("READY...");
+    lcd.print("Ready...");
   }
   if(digitalRead(SELECT) == HIGH){
     while(digitalRead(SELECT) == HIGH){}
@@ -98,7 +100,7 @@ void selecting(){
     drink_choice = choice_raw/257;
     lcd.setCursor(0,0);
     lcd.print("Current Drink:");
-    lcd.print(drink_choice);
+    lcd.print(drink_list[drink_choice]);
     lcd.setCursor(0,1);
     lcd.print("Please Confirm");
     sel_time = millis();
@@ -168,7 +170,7 @@ void dispensing(){
     digitalWrite(dirPin, HIGH);
     digitalWrite(dir2Pin, HIGH);
     lcd.setCursor(2,0);
-    lcd.print("DISPENSING..");
+    lcd.print("Dispensing "+drink_list[drink_choice]+"...");
     dispense_time = millis();
   }
 
@@ -241,7 +243,7 @@ void done(){
   if(state != prior_state){
     prior_state = state;
     lcd.setCursor(5,0);
-    lcd.print("DONE!!!");
+    lcd.print("Enjoy (:");
     digitalWrite(GREEN, HIGH);
   }
   delay(5000);
