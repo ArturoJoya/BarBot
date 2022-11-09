@@ -39,7 +39,7 @@ const int CONFIRM = 7;
 const int RESET = 6;
 // Selection Potentiometer
 const int POTSELECT = 1;
-//
+// List of Drink Strings
 const char* drink_list[] = {"","Soda Water","Gin","Gin Fizz"};
 
 // State timings
@@ -86,7 +86,7 @@ enum set_states{
   NOTSET,
   DISABLED,
   CLEAN,
-  SETUP
+  SET
 };
 set_states prev_state, curr_state;
 
