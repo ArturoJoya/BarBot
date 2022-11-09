@@ -96,20 +96,87 @@ set_states prev_state, curr_state;
 
 uint32_t sel_time;
 uint16_t sel_count;
+uint32_t dis_time;
+uint16_t dis_count;
 
-//functions to be incorporated upon creating the SETUP mode
 /*
+
+// MAINTENANCE  FUNCTIONS 
+
 void disabled(){
-  //like `ready`, but in the setup mode 
+  // Menu mode for maintenance 
+
+  // Initialization mode
+  if (curr_state != prev_state){
+    prev_state = curr_state;
+    lcd.clear();
+    dis_time = millis();
+    dis_count = 0;
+    lcd.setCursor(0,0);
+    lcd.print("- BARBOT -");
+    lcd.setCursor(0,1);
+    lcd.print("- MAINTENANCE -");
+    lcd.setCursor(0,2);
+    lcd.print("- MODE -");
+  }
+
+  // Blink LEDs representing choice 
+  t = millis();
+  if(t >= dis_time + BLINK_INT){
+      digitalWrite(RED, !digitalRead(RED));
+      dis_time = t;
+      dis_count++;
+  }
+
+  // When timeout, display maintenance options
+  if (dis_count > 6){
+    lcd.clear();
+    lcd.setCursor(0,1);
+    lcd.print("Select -> Clean");
+    lcd.setCursor(0,2);
+    lcd.print("Confirm -> Set");
+  }
+  
+  // Allow switch to maintenance options
+  if (digitalRead(CONFIRM) == HIGH){
+    while(digitalRead(CONFIRM) == HIGH) {}
+      state = CLEAN;
+  } else if(digitalRead(SELECT) == HIGH){
+    while(digitalRead(SELECT) == HIGH){}
+      state = SET;
+  }
 }
 
 void clean(){
-  //function to run water through to clean the pumplines
+  // Pumpline Cleaning Mode
+
+  // Initialize 
+  if (curr_state != prev_state){
+    prev_state = curr_state;
+    lcd.clear();
+    lcd.setCursor(0,1);
+    lcd.print("Press Confirm")
+    lcd.setCursor(0,2);
+    lcd.print("to Stop")
+    pump1.moveTo(1000000);
+    pump2.moveTo(1000000);
+  }
+
+  // ARTURO - Run motors here 
+
+  if (digitalRead(CONFIRM) == HIGH){
+    while(digitalRead(CONFIRM) == HIGH) {}
+      state = DISABLED;
+  }
 }
 
 void set(){
-  //function to set the liquids in the pumplines 
+  // Liquid Setting Mode
+  if (curr_state != prev_state){
+    prev_state = curr_state;
+  } 
 }
+
 */
 
 void idle(){
