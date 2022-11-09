@@ -15,7 +15,7 @@
 #include <LiquidCrystal_I2C.h>
 
 // User interface setup
-LiquidCrystal_I2C lcd(0x26,16,1); 
+LiquidCrystal_I2C lcd(0x26,16,3); 
 
 // State LEDs
 const int RED = 13;
