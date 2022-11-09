@@ -48,7 +48,6 @@ const char* dis_drink_list[] = {
 uint32_t blink_time;
 uint32_t dispense_time;
 uint16_t BLINK_INT = 500;
-uint16_t CONFIRM_INT = 5000;
 
 // Choice instantiation
 int choice_raw;
@@ -72,7 +71,6 @@ enum use_states{
   NONE,
   READY,
   SELECTING,
-  CONFIRM,
   DISPENSING,
   DONE
 };
@@ -137,19 +135,19 @@ void selecting(){
   // initialize selecting state
   if (state != prior_state){
     prior_state = state;
-    prior_choice = "None"
+    choice_raw = analogRead(POTSELECT);
+    drink_choice = choice_raw/257;
     lcd.setCursor(0,0);
     lcd.print("Current Drink:");
-    // choice_raw = analogRead(POTSELECT);
-    // drink_choice = choice_raw/257;
-    // lcd.setCursor(0,1);
-    // lcd.print(drink_list[drink_choice]);
+    lcd.setCursor(0,1);
+    lcd.print(drink_list[drink_choice]);
     // lcd.setCursor(0,1);
     // lcd.print("Please Confirm");
     sel_time = millis();
     sel_count = 0;
     
   }
+
 
   // Blink LEDs representing choice
   t = millis();
@@ -167,22 +165,12 @@ void selecting(){
     sel_count++;
   }
 
-  // Display current drink choice
-  choice_raw = analogRead(POTSELECT);
-  drink_choice = choice_raw/257;
-  if (prior_choice != drink_list[drink_choice]){
-    prior_choice = drink_list[drink_choice]
-    // Arturo - this might get messy if the LCD doesn't override the entire row of text. Will need refactor prob.
-    lcd.setCursor(0,1);
-    lcd.print(drink_list[drink_choice])
-  }
-
   // Check for state transition
-  if (digitalRead(SELECT) == HIGH){
-    while(digitalRead(SELECT) == HIGH) {}
-    state = CONFIRM;
-    // pump1.moveTo(1000000);
-    // pump2.moveTo(1000000);
+  if (digitalRead(CONFIRM) == HIGH){
+    while(digitalRead(CONFIRM) == HIGH) {}
+    state = DISPENSING;
+    pump1.moveTo(1000000);
+    pump2.moveTo(1000000);
   } else if(sel_count == 20 || drink_choice == 0){
     state = READY;
   } else if(digitalRead(RESET) == HIGH){
@@ -213,36 +201,6 @@ void step_2(int dels){
   delayMicroseconds(dels);
 }
 */
-
-void confirm(){
-
-  // Initialize confirmation state
-  if (state != prior_state){
-    prior_state = state;
-    lcd.setCursor(0,1);
-    lcd.print("Please Confirm");
-  }
-
-  // Check time and time out if no confirmation
-  // else start dispensing
-  t = millis();
-  if(t >= CONFIRM_INT){
-    digitalWrite(RED, LOW);
-    digitalWrite(YELLOW, LOW);
-    digitalWrite(GREEN, LOW);
-    lcd.clear();
-    state = READY;
-  } else if(digitalRead(CONFIRM) == HIGH){
-    digitalWrite(RED, LOW);
-    digitalWrite(YELLOW, LOW);
-    digitalWrite(GREEN, LOW);
-    lcd.clear();
-    pump1.moveTo(1000000);
-    pump2.moveTo(1000000);
-    state = DISPENSING;
-  }
-
-}
 
 void dispensing(){
   // What to do while dispensing
@@ -459,9 +417,6 @@ void loop() {
     break;
     case SELECTING:
     selecting();
-    break;
-    case CONFIRM:
-    confirm();
     break;
     case DISPENSING:
     dispensing();
