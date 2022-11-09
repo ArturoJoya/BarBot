@@ -39,7 +39,7 @@ const int RESET = 6;
 // Selection Potentiometer
 const int POTSELECT = 1;
 //
-const array drinkChoice = ["Soda Water","Gin","Gin Fizz"];
+const char* drink_list[] = {"","Soda Water","Gin","Gin Fizz"};
 
 // State timings
 uint32_t blink_time;
@@ -100,9 +100,10 @@ void selecting(){
     drink_choice = choice_raw/257;
     lcd.setCursor(0,0);
     lcd.print("Current Drink:");
-    lcd.print(drink_list[drink_choice]);
     lcd.setCursor(0,1);
-    lcd.print("Please Confirm");
+    lcd.print(drink_list[drink_choice]);
+    // lcd.setCursor(0,1);
+    // lcd.print("Please Confirm");
     sel_time = millis();
     sel_count = 0;
   }
@@ -170,7 +171,9 @@ void dispensing(){
     digitalWrite(dirPin, HIGH);
     digitalWrite(dir2Pin, HIGH);
     lcd.setCursor(2,0);
-    lcd.print("Dispensing "+drink_list[drink_choice]+"...");
+    lcd.print("Dispensing:");
+    lcd.setCursor(2,1);
+    lcd.print(drink_list[drink_choice]);
     dispense_time = millis();
   }
 
