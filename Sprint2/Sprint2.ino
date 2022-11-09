@@ -32,6 +32,7 @@ const int step2Pin = 5;
 // Motor Parameters
 const int stepsPerRevolution = 200;
 const int mit = 1;
+const int decel_time = 18000;
 // Buttons
 const int SELECT = 8;
 const int CONFIRM = 7;
@@ -51,27 +52,62 @@ int choice_raw;
 int drink_choice;
 
 //duration of pumps being turned on based on drink choice
-int d1p1dur = 10000;
-int d1p2dur = 0;
-int d2p1dur = 0;
-int d2p2dur = 10000;
-int d3p1dur = 10000;
-int d3p2dur = 10000;
+long int d1p1dur = 30000;
+long int d1p2dur = 0;
+long int d2p1dur = 0;
+long int d2p2dur = 30000;
+long int d3p1dur = 60000;
+long int d3p2dur = 45000;
 
+// pump initialization
 AccelStepper pump1 = AccelStepper(mit, stepPin, dirPin);
 AccelStepper pump2 = AccelStepper(mit, step2Pin, dir2Pin);
 
-enum states{
+// user FSM states
+enum use_states{
   NONE,
   READY,
   SELECTING,
   DISPENSING,
   DONE
 };
+use_states prior_state, state;
 
-states prior_state, state;
+// mode states
+enum modes{
+  OFF,
+  USER,
+  SETUP
+};
+modes prior_mode, mode;
+
+// setup FSM states
+enum set_states{
+  NOTSET,
+  DISABLED,
+  CLEAN,
+  SETUP
+};
+set_states prev_state, curr_state;
+
+
 uint32_t sel_time;
 uint16_t sel_count;
+
+//functions to be incorporated upon creating the SETUP mode
+/*
+void disabled(){
+  //like `ready`, but in the setup mode 
+}
+
+void clean(){
+  //function to run water through to clean the pumplines
+}
+
+void set(){
+  //function to set the liquids in the pumplines 
+}
+*/
 
 void idle(){
   // Wait for the SELECT button press, in the meantime, hold RED on.
@@ -106,7 +142,9 @@ void selecting(){
     // lcd.print("Please Confirm");
     sel_time = millis();
     sel_count = 0;
+    
   }
+
 
   // Blink LEDs representing choice
   t = millis();
@@ -128,6 +166,8 @@ void selecting(){
   if (digitalRead(CONFIRM) == HIGH){
     while(digitalRead(CONFIRM) == HIGH) {}
     state = DISPENSING;
+    pump1.moveTo(1000000);
+    pump2.moveTo(1000000);
   } else if(sel_count == 20 || drink_choice == 0){
     state = READY;
   } else if(digitalRead(RESET) == HIGH){
@@ -144,85 +184,122 @@ void selecting(){
   }
 }
 /*
-void step_1(){
+void step_1(int dels){
   digitalWrite(stepPin, HIGH);
-  delayMicroseconds(2000);
+  delayMicroseconds(dels);
   digitalWrite(stepPin, LOW);
-  delayMicroseconds(2000);
+  delayMicroseconds(dels);
 }
 
-void step_2(){
+void step_2(int dels){
   digitalWrite(step2Pin, HIGH);
-  delayMicroseconds(2000);
+  delayMicroseconds(dels);
   digitalWrite(step2Pin, LOW);
-  delayMicroseconds(2000);
+  delayMicroseconds(dels);
 }
 */
 
 void dispensing(){
   // What to do while dispensing
   uint32_t t;
+  //int del;
   
   // initialize dispensing state
   if(state != prior_state){
     prior_state = state;
     Serial.println(drink_choice);
     digitalWrite(YELLOW, HIGH);
-    digitalWrite(dirPin, HIGH);
-    digitalWrite(dir2Pin, HIGH);
+    //digitalWrite(dirPin, HIGH);
+    //digitalWrite(dir2Pin, HIGH);
     lcd.setCursor(2,0);
-    lcd.print("Dispensing:");
-    lcd.setCursor(2,1);
-    lcd.print(drink_list[drink_choice]);
+    lcd.print("Dispensing "+drink_list[drink_choice]+"...");
     dispense_time = millis();
+    //del = 1500;
   }
 
   // Dispense drinks according to drink_choice
   t = millis();
-  Serial.println(t);
+  /*
+  if(del >= 9){
+    del = del - 2;
+  }
+  */
   if(drink_choice == 1){
+    //pump 1
     if(t < dispense_time + d1p1dur){
       digitalWrite(BLUE, HIGH);
-      pump1.run();
-      //step_1();
+      } else{
+        digitalWrite(BLUE, LOW);
       }
+    if(t > (dispense_time + d1p1dur - decel_time)){
+      pump1.stop();
+    }
+    //pump 2
     if(t < dispense_time + d1p2dur){
       digitalWrite(WHITE, HIGH);
-      pump2.run();
-      //step_2();
+    } else {
+      digitalWrite(WHITE, LOW);
     }
+    if(t > (dispense_time + d1p2dur - decel_time)){
+      pump2.stop();
+    }
+    //both done
     if(t > dispense_time + d1p1dur && t > dispense_time + d1p2dur){
       state = DONE;
     }
-  }else if(drink_choice == 2){
+  }
+  
+  else if(drink_choice == 2){
+    //pump 1
     if(t < dispense_time + d2p1dur){
       digitalWrite(BLUE, HIGH);
-      pump1.run();
-      //step_1();
+    } else{
+      digitalWrite(BLUE, LOW);
     }
+    if(t > (dispense_time + d2p1dur - decel_time)){
+      pump1.stop();
+    }
+    //pump2
     if(t < dispense_time + d2p2dur){
       digitalWrite(WHITE, HIGH);
-      pump2.run();
-      //step_2();
+    } else {
+      digitalWrite(WHITE, LOW);
     }
+    if(t > (dispense_time + d2p2dur - decel_time)){
+      pump2.stop();
+    }
+    //both done
     if(t > dispense_time + d2p1dur && t > dispense_time + d2p2dur){
       state = DONE;
     }
-  }else{
+  }
+  
+  else{
+    //pump 1
     if(t < dispense_time + d3p1dur){
       digitalWrite(BLUE, HIGH);
-      pump1.run();
-      //step_1();
+    } else{
+      digitalWrite(BLUE, LOW);
     }
+    if(t > (dispense_time + d3p1dur - decel_time)){
+      pump1.stop();
+    }
+    //pump 2
     if(t < dispense_time + d3p2dur){
       digitalWrite(WHITE, HIGH);
-      pump2.run();
-      //step_2();
+    } else{
+      digitalWrite(WHITE, LOW);
     }
-    if(t > dispense_time + d3p1dur && t > d3p2dur){
+    if(t > (dispense_time + d3p2dur - decel_time)){
+      pump2.stop();
+    }
+    //both done
+    if(t > dispense_time + d3p1dur && t > dispense_time + d3p2dur){
       state = DONE;
     }
   }
+  pump1.run();
+  pump2.run();
 
   //if RESET button is hit, will abort action and return to READY
   if(digitalRead(RESET) == HIGH){
@@ -236,7 +313,8 @@ void dispensing(){
     digitalWrite(BLUE, LOW);
     digitalWrite(stepPin, LOW);
     digitalWrite(WHITE, LOW);
-    //digitalWrite(step2Pin, LOW);
+    pump1.setCurrentPosition(0);
+    pump2.setCurrentPosition(0);
     lcd.clear();
   }
 }
@@ -258,6 +336,7 @@ void done(){
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
+  // LCD/LED setup
   lcd.begin();
   lcd.backlight();
   pinMode(RED, OUTPUT);
@@ -265,36 +344,70 @@ void setup() {
   pinMode(GREEN, OUTPUT);
   pinMode(BLUE, OUTPUT);
   pinMode(WHITE, OUTPUT);
-
-  pump1.setMaxSpeed(800);
-  pump1.setAcceleration(50);
-  pump1.setSpeed(200);
-  pump2.setMaxSpeed(800);
-  pump2.setAcceleration(50);
-  pump2.setSpeed(200);
-  //pinMode(stepPin, OUTPUT);
-  //pinMode(dirPin, OUTPUT);
-  //pinMode(step2Pin, OUTPUT);
-  //pinMode(dir2Pin, OUTPUT);
-
-  pinMode(SELECT, INPUT);
-  pinMode(CONFIRM, INPUT);
-  pinMode(RESET, INPUT);
-  pinMode(POTSELECT, INPUT);
-
   digitalWrite(RED, HIGH);
   digitalWrite(YELLOW, LOW);
   digitalWrite(GREEN, LOW);
   digitalWrite(BLUE, LOW);
   digitalWrite(WHITE, LOW);
 
+  // motor setup
+  pump1.setMaxSpeed(850);
+  pump1.setAcceleration(50);
+  pump1.setSpeed(400);
+  pump2.setMaxSpeed(850);
+  pump2.setAcceleration(50);
+  pump2.setSpeed(400);
+
+  // Button Setup
+  pinMode(SELECT, INPUT);
+  pinMode(CONFIRM, INPUT);
+  pinMode(RESET, INPUT);
+  pinMode(POTSELECT, INPUT);
+
+  //FSM setup
   prior_state = NONE;
   state = READY;
-
+  //prior_mode = OFF;
+  //mode = USER;
+  //prev_state = NOTSET;
+  //curr_state = DISABLED;
 }
 
 void loop() {
   // A state machine that loops through the process of dispensing a drink.
+  /* nested switch statements designed for user/setup modes
+  switch(mode){
+    case USER:
+      switch(state){
+        case READY:
+        idle();
+        break;
+        case SELECTING:
+        selecting();
+        break;
+        case DISPENSING:
+        dispensing();
+        break;
+        case DONE:
+        done();
+        break;
+      }
+    break;
+    case SETUP:
+      switch(curr_state){
+        case DISABLED:
+        disabled();
+        break;
+        case CLEAN:
+        clean();
+        break;
+        case SETUP:
+        set();
+        breal;
+      }
+    break;
+  }
+  */
   switch(state){
     case READY:
     idle();
