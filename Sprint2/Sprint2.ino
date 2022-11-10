@@ -62,6 +62,9 @@ long int d2p2dur = 30000;
 long int d3p1dur = 60000;
 long int d3p2dur = 45000;
 
+//duration of time used to set liquids in ms
+long int settime = 4206969;
+
 // pump initialization
 AccelStepper pump1 = AccelStepper(mit, stepPin, dirPin);
 AccelStepper pump2 = AccelStepper(mit, step2Pin, dir2Pin);
@@ -98,8 +101,6 @@ uint32_t sel_time;
 uint16_t sel_count;
 uint32_t dis_time;
 uint16_t dis_count;
-
-/*
 
 // MAINTENANCE  FUNCTIONS 
 
@@ -140,10 +141,10 @@ void disabled(){
   // Allow switch to maintenance options
   if (digitalRead(CONFIRM) == HIGH){
     while(digitalRead(CONFIRM) == HIGH) {}
-      state = CLEAN;
+      curr_state = CLEAN;
   } else if(digitalRead(SELECT) == HIGH){
     while(digitalRead(SELECT) == HIGH){}
-      state = SET;
+      curr_state = SET;
   }
 }
 
@@ -155,9 +156,9 @@ void clean(){
     prev_state = curr_state;
     lcd.clear();
     lcd.setCursor(0,1);
-    lcd.print("Press Confirm")
+    lcd.print("Press Confirm");
     lcd.setCursor(0,2);
-    lcd.print("to Stop")
+    lcd.print("to Stop");
     pump1.moveTo(1000000);
     pump2.moveTo(1000000);
   }
@@ -166,18 +167,34 @@ void clean(){
 
   if (digitalRead(CONFIRM) == HIGH){
     while(digitalRead(CONFIRM) == HIGH) {}
-      state = DISABLED;
+      curr_state = DISABLED;
   }
 }
 
 void set(){
   // Liquid Setting Mode
+
+  // Initialize
   if (curr_state != prev_state){
     prev_state = curr_state;
+    lcd.clear();
+    lcd.setCursor(0,1);
+    lcd.print("Setting Liquids");
+    lcd.setCursor(0,2);
+    lcd.print("Please Wait...");
   } 
+
+  // Stop motors and switch stage after set amount of time.
+  t = millis();
+  if (t > settime){
+    // ARTURO - Stop Motors Here
+    curr_state = DISABLED;
+  }
+
+  // ARTURO - Run Motors Here
+
 }
 
-*/
 
 void idle(){
   // Wait for the SELECT button press, in the meantime, hold RED on.
