@@ -106,7 +106,7 @@ uint16_t dis_count;
 
 void disabled(){
   // Menu mode for maintenance 
-
+  uint32_t t;
   // Initialization mode
   if (curr_state != prev_state){
     prev_state = curr_state;
@@ -173,7 +173,7 @@ void clean(){
 
 void set(){
   // Liquid Setting Mode
-
+  uint32_t t;
   // Initialize
   if (curr_state != prev_state){
     prev_state = curr_state;
