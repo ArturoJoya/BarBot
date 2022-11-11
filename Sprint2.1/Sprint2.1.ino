@@ -82,6 +82,11 @@ long int setupdur = 45000;
 // pump initialization
 AccelStepper pump1 = AccelStepper(mit, stepPin, dirPin);
 AccelStepper pump2 = AccelStepper(mit, step2Pin, dir2Pin);
+AccelStepper pump3 = AccelStepper(mit, step2Pin, dir2Pin);
+AccelStepper pump4 = AccelStepper(mit, step2Pin, dir2Pin);
+AccelStepper pump5 = AccelStepper(mit, step2Pin, dir2Pin);
+AccelStepper pump6 = AccelStepper(mit, step2Pin, dir2Pin);
+
 
 // user FSM states
 enum use_states{
@@ -164,12 +169,20 @@ void disabled(){
     while(digitalRead(CONFIRM) == HIGH) {}
     pump1.moveTo(1000000);
     pump2.moveTo(1000000);
+    pump3.moveTo(1000000);
+    pump4.moveTo(1000000);
+    pump5.moveTo(1000000);
+    pump6.moveTo(1000000);
     curr_state = CLEAN;
   } 
   if(digitalRead(SELECT) == HIGH){
     while(digitalRead(SELECT) == HIGH){}
     pump1.moveTo(1000000);
     pump2.moveTo(1000000);
+    pump3.moveTo(1000000);
+    pump4.moveTo(1000000);
+    pump5.moveTo(1000000);
+    pump6.moveTo(1000000);
     curr_state = SET;
   }
   if(digitalRead(RESET) == HIGH){
@@ -177,6 +190,10 @@ void disabled(){
     mode = USER;
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    pump3.setCurrentPosition(0);
+    pump4.setCurrentPosition(0);
+    pump5.setCurrentPosition(0);
+    pump6.setCurrentPosition(0);
     lcd.clear();
     lcd.setCursor(4,0);
     lcd.print("Ready...");
@@ -205,18 +222,34 @@ void clean(){
   }
   if(t > cleandur + clean_time - decel_time){
     pump1.stop();
-    pump2.stop();
+    pump2.stop(); 
+    pump3.stop();
+    pump4.stop(); 
+    pump5.stop();
+    pump6.stop(); 
   }
 
   pump1.run();
   pump2.run(); 
+  pump3.run();
+  pump4.run(); 
+  pump5.run();
+  pump6.run(); 
 
   if(digitalRead(RESET) == HIGH){
     while(digitalRead(RESET) == HIGH){}
     pump1.stop();
-    pump2.stop();
+    pump2.stop(); 
+    pump3.stop();
+    pump4.stop(); 
+    pump5.stop();
+    pump6.stop(); 
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    pump3.setCurrentPosition(0);
+    pump4.setCurrentPosition(0);
+    pump5.setCurrentPosition(0);
+    pump6.setCurrentPosition(0);
     digitalWrite(BLUE, LOW);
     digitalWrite(WHITE, LOW);
     curr_state = DISABLED;
@@ -244,11 +277,20 @@ void set(){
   }
   if(t > setupdur + setup_time - decel_time){
     pump1.stop();
-    pump2.stop();
+    pump2.stop(); 
+    pump3.stop();
+    pump4.stop(); 
+    pump5.stop();
+    pump6.stop(); 
+
   }
 
   pump1.run();
   pump2.run(); 
+  pump3.run();
+  pump4.run(); 
+  pump5.run();
+  pump6.run(); 
 
   // Stop motors and switch stage after set amount of time.
   t = millis();
@@ -256,15 +298,27 @@ void set(){
     curr_state = DISABLED;
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    pump3.setCurrentPosition(0);
+    pump4.setCurrentPosition(0);
+    pump5.setCurrentPosition(0);
+    pump6.setCurrentPosition(0);
   }
   
   // delete later
   if(digitalRead(RESET) == HIGH){
     while(digitalRead(RESET) == HIGH){}
     pump1.stop();
-    pump2.stop();
+    pump2.stop(); 
+    pump3.stop();
+    pump4.stop(); 
+    pump5.stop();
+    pump6.stop(); 
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    pump3.setCurrentPosition(0);
+    pump4.setCurrentPosition(0);
+    pump5.setCurrentPosition(0);
+    pump6.setCurrentPosition(0);
     digitalWrite(BLUE, LOW);
     digitalWrite(WHITE, LOW);
     curr_state = DISABLED;
