@@ -38,9 +38,10 @@ const int step5Pin = 6;
 const int dir6Pin = 32;
 const int step6Pin = 7;
 // Motor Parameters
-const int stepsPerRevolution = 200;
+const int max_speed = 1000;
+const int acceleration = 50;
 const int mit = 1;
-const int decel_time = 18000;
+const int decel_time = (max_speed / acceleration)*1000;
 // Buttons
 const int SELECT = 33;
 const int CONFIRM = 35;
@@ -197,6 +198,7 @@ void disabled(){
     lcd.clear();
     lcd.setCursor(4,0);
     lcd.print("Ready...");
+    digitalWrite(RED, HIGH);
   }
 }
 
@@ -565,11 +567,11 @@ void setup() {
   digitalWrite(WHITE, LOW);
 
   // motor setup
-  pump1.setMaxSpeed(850);
-  pump1.setAcceleration(50);
+  pump1.setMaxSpeed(max_speed);
+  pump1.setAcceleration(acceleration);
   pump1.setSpeed(400);
-  pump2.setMaxSpeed(850);
-  pump2.setAcceleration(50);
+  pump2.setMaxSpeed(max_speed);
+  pump2.setAcceleration(acceleration);
   pump2.setSpeed(400);
 
   // Button Setup

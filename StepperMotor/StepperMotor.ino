@@ -7,6 +7,7 @@
 #define dir2Pin 4
 #define step2Pin 5
 #define mit 1
+#define reset 6
 
 #define stepsPerRevolution 200
 
@@ -16,14 +17,17 @@ AccelStepper pump2 = AccelStepper(mit, step2Pin, dir2Pin);
 void setup() {
   // Declare pins as output:
   Serial.begin(115200);
-  pump1.setMaxSpeed(800);
+  pump1.setMaxSpeed(1000);
   pump1.setAcceleration(50);
   pump1.setSpeed(200);
-  pump1.moveTo(1000);
-  pump2.setMaxSpeed(800);
+  pump1.moveTo(5000000);
+  pump2.setMaxSpeed(1000);
   pump2.setAcceleration(50);
   pump2.setSpeed(200);
-  pump2.moveTo(50000000);
+  pump2.moveTo(5000000);
+
+  pinMode(reset, INPUT);
+  
 }
 
 void loop() {
@@ -35,6 +39,11 @@ void loop() {
   if (pump2.distanceToGo() == 0) {
     pump2.moveTo(-pump2.currentPosition());
     Serial.println("Rotating Motor in opposite direction...");
+  }
+  if(digitalRead(reset) == HIGH){
+    while(digitalRead(reset) == HIGH){}
+    pump1.setSpeed(0);
+    pump2.setSpeed(0);
   }
   pump1.run();
   pump2.run();
