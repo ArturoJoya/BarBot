@@ -50,8 +50,6 @@ const int RESET = 37;
 const int POTSELECT = 1;
 // Lists of Drink Strings
 const char* drink_list[] = {"NULL","Soda Water","Gin","Gin Fizz"};
-//const char* dis_drink_list[] = {
-//  "NULL","Dispensing Soda Water","Dispensing Gin","Dispensing Gin Fizz"};
 
 // State timings
 uint32_t blink_time;
@@ -83,10 +81,10 @@ long int setupdur = 45000;
 // pump initialization
 AccelStepper pump1 = AccelStepper(mit, stepPin, dirPin);
 AccelStepper pump2 = AccelStepper(mit, step2Pin, dir2Pin);
-AccelStepper pump3 = AccelStepper(mit, step2Pin, dir2Pin);
-AccelStepper pump4 = AccelStepper(mit, step2Pin, dir2Pin);
-AccelStepper pump5 = AccelStepper(mit, step2Pin, dir2Pin);
-AccelStepper pump6 = AccelStepper(mit, step2Pin, dir2Pin);
+AccelStepper pump3 = AccelStepper(mit, step3Pin, dir3Pin);
+AccelStepper pump4 = AccelStepper(mit, step4Pin, dir4Pin);
+AccelStepper pump5 = AccelStepper(mit, step5Pin, dir5Pin);
+AccelStepper pump6 = AccelStepper(mit, step6Pin, dir6Pin);
 
 
 // user FSM states
@@ -198,7 +196,6 @@ void disabled(){
     lcd.clear();
     lcd.setCursor(4,0);
     lcd.print("Ready...");
-    digitalWrite(RED, HIGH);
   }
 }
 
@@ -392,6 +389,10 @@ void selecting(){
     state = DISPENSING;
     pump1.moveTo(1000000);
     pump2.moveTo(1000000);
+    pump3.moveTo(1000000);
+    pump4.moveTo(1000000);
+    pump5.moveTo(1000000);
+    pump6.moveTo(1000000);
   } else if(sel_count == 20 || drink_choice == 0){
     state = READY;
   } else if(digitalRead(RESET) == HIGH){
