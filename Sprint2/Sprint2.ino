@@ -48,6 +48,9 @@ const char* dis_drink_list[] = {
 uint32_t blink_time;
 uint32_t dispense_time;
 uint16_t BLINK_INT = 500;
+// Setup timings
+uint32_t clean_time;
+uint32_t setup_time;
 
 // Choice instantiation
 int choice_raw;
@@ -62,8 +65,11 @@ long int d2p2dur = 30000;
 long int d3p1dur = 60000;
 long int d3p2dur = 45000;
 
+long int cleandur = 90000;
+long int setupdur = 45000;
+
 //duration of time used to set liquids in ms
-long int settime = 4206969;
+//long int settime = 4206969;
 
 // pump initialization
 AccelStepper pump1 = AccelStepper(mit, stepPin, dirPin);
@@ -119,6 +125,11 @@ void disabled(){
     lcd.print("- MAINTENANCE -");
     lcd.setCursor(0,2);
     lcd.print("- MODE -");
+    delay(2000);
+    lcd.setCursor(0,0);
+    lcd.print("Select -> Clean");
+    lcd.setCursor(0,1);
+    lcd.print("Confirm -> Set");
   }
 
   // Blink LEDs representing choice 
@@ -129,27 +140,44 @@ void disabled(){
       dis_count++;
   }
 
+/*
   // When timeout, display maintenance options
   if (dis_count > 6){
     lcd.clear();
-    lcd.setCursor(0,1);
+    lcd.setCursor(0,0);
     lcd.print("Select -> Clean");
-    lcd.setCursor(0,2);
+    lcd.setCursor(0,1);
     lcd.print("Confirm -> Set");
   }
+  */
   
   // Allow switch to maintenance options
   if (digitalRead(CONFIRM) == HIGH){
     while(digitalRead(CONFIRM) == HIGH) {}
-      curr_state = CLEAN;
-  } else if(digitalRead(SELECT) == HIGH){
+    pump1.moveTo(1000000);
+    pump2.moveTo(1000000);
+    curr_state = CLEAN;
+  } 
+  if(digitalRead(SELECT) == HIGH){
     while(digitalRead(SELECT) == HIGH){}
-      curr_state = SET;
+    pump1.moveTo(1000000);
+    pump2.moveTo(1000000);
+    curr_state = SET;
+  }
+  if(digitalRead(RESET) == HIGH){
+    while(digitalRead(RESET) == HIGH) {}
+    mode = USER;
+    pump1.setCurrentPosition(0);
+    pump2.setCurrentPosition(0);
+    lcd.clear();
+    lcd.setCursor(4,0);
+    lcd.print("Ready...");
   }
 }
 
 void clean(){
   // Pumpline Cleaning Mode
+  uint32_t t;
 
   // Initialize 
   if (curr_state != prev_state){
@@ -159,15 +187,33 @@ void clean(){
     lcd.print("Press Confirm");
     lcd.setCursor(0,2);
     lcd.print("to Stop");
-    pump1.moveTo(1000000);
-    pump2.moveTo(1000000);
+    clean_time = millis();
   }
 
-  // ARTURO - Run motors here 
+  t = millis();
+  if(t < cleandur + clean_time){
+    digitalWrite(BLUE, LOW);
+    digitalWrite(WHITE, LOW);
+  }
+  if(t > cleandur + clean_time - decel_time){
+    pump1.stop();
+    pump2.stop();
+  }
 
-  if (digitalRead(CONFIRM) == HIGH){
-    while(digitalRead(CONFIRM) == HIGH) {}
-      curr_state = DISABLED;
+  pump1.run();
+  pump2.run(); 
+
+  //if (digitalRead(CONFIRM) == HIGH){
+    //while(digitalRead(CONFIRM) == HIGH) {}
+      //curr_state = DISABLED;
+  //}
+  if(digitalRead(RESET) == HIGH){
+    while(digitalRead(RESET) == HIGH){}
+    pump1.stop();
+    pump2.stop();
+    pump1.setCurrentPosition(0);
+    pump2.setCurrentPosition(0);
+    curr_state = DISABLED;
   }
 }
 
@@ -182,17 +228,39 @@ void set(){
     lcd.print("Setting Liquids");
     lcd.setCursor(0,2);
     lcd.print("Please Wait...");
-  } 
+    setup_time = millis();
+  }
+
+  t = millis();
+  if(t < setupdur + setup_time){
+    digitalWrite(BLUE, LOW);
+    digitalWrite(WHITE, LOW);
+  }
+  if(t > setupdur + setup_time - decel_time){
+    pump1.stop();
+    pump2.stop();
+  }
+
+  pump1.run();
+  pump2.run(); 
 
   // Stop motors and switch stage after set amount of time.
   t = millis();
-  if (t > settime){
-    // ARTURO - Stop Motors Here
+  if (t > setupdur + setup_time){
+    curr_state = DISABLED;
+    pump1.setCurrentPosition(0);
+    pump2.setCurrentPosition(0);
+  }
+  
+  // delete later
+  if(digitalRead(RESET) == HIGH){
+    while(digitalRead(RESET) == HIGH){}
+    pump1.stop();
+    pump2.stop();
+    pump1.setCurrentPosition(0);
+    pump2.setCurrentPosition(0);
     curr_state = DISABLED;
   }
-
-  // ARTURO - Run Motors Here
-
 }
 
 
@@ -207,6 +275,11 @@ void idle(){
   if(digitalRead(SELECT) == HIGH){
     while(digitalRead(SELECT) == HIGH){}
     state = SELECTING;
+    lcd.clear();
+  }
+  if(digitalRead(RESET) == HIGH){
+    while(digitalRead(RESET) == HIGH){}
+    mode = SETUP;
     lcd.clear();
   }
 }
@@ -231,7 +304,6 @@ void selecting(){
     sel_count = 0;
     
   }
-
 
   // Blink LEDs representing choice
   t = millis();
@@ -289,28 +361,19 @@ void step_2(int dels){
 void dispensing(){
   // What to do while dispensing
   uint32_t t;
-  //int del;
   
   // initialize dispensing state
   if(state != prior_state){
     prior_state = state;
     Serial.println(drink_choice);
     digitalWrite(YELLOW, HIGH);
-    //digitalWrite(dirPin, HIGH);
-    //digitalWrite(dir2Pin, HIGH);
     lcd.setCursor(0,0);
     lcd.print(dis_drink_list[drink_choice]);
     dispense_time = millis();
-    //del = 1500;
   }
 
   // Dispense drinks according to drink_choice
   t = millis();
-  /*
-  if(del >= 9){
-    del = del - 2;
-  }
-  */
   if(drink_choice == 1){
     //pump 1
     if(t < dispense_time + d1p1dur){
@@ -454,15 +517,15 @@ void setup() {
   //FSM setup
   prior_state = NONE;
   state = READY;
-  //prior_mode = OFF;
-  //mode = USER;
-  //prev_state = NOTSET;
-  //curr_state = DISABLED;
+  prior_mode = OFF;
+  mode = USER;
+  prev_state = NOTSET;
+  curr_state = DISABLED;
 }
 
 void loop() {
   // A state machine that loops through the process of dispensing a drink.
-  /* nested switch statements designed for user/setup modes
+  // nested switch statements designed for user/setup modes
   switch(mode){
     case USER:
       switch(state){
@@ -488,25 +551,10 @@ void loop() {
         case CLEAN:
         clean();
         break;
-        case SETUP:
+        case SET:
         set();
-        breal;
+        break;
       }
-    break;
-  }
-  */
-  switch(state){
-    case READY:
-    idle();
-    break;
-    case SELECTING:
-    selecting();
-    break;
-    case DISPENSING:
-    dispensing();
-    break;
-    case DONE:
-    done();
     break;
   }
 }
