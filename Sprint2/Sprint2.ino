@@ -41,8 +41,8 @@ const int RESET = 6;
 const int POTSELECT = 1;
 // Lists of Drink Strings
 const char* drink_list[] = {"NULL","Soda Water","Gin","Gin Fizz"};
-const char* dis_drink_list[] = {
-  "NULL","Dispensing Soda Water","Dispensing Gin","Dispensing Gin Fizz"};
+//const char* dis_drink_list[] = {
+//  "NULL","Dispensing Soda Water","Dispensing Gin","Dispensing Gin Fizz"};
 
 // State timings
 uint32_t blink_time;
@@ -125,11 +125,11 @@ void disabled(){
     lcd.print("- MAINTENANCE -");
     lcd.setCursor(0,2);
     lcd.print("- MODE -");
-    delay(2000);
+    delay(1000);
     lcd.setCursor(0,0);
-    lcd.print("Select -> Clean");
+    lcd.print("Set-Up    Clean");
     lcd.setCursor(0,1);
-    lcd.print("Confirm -> Set");
+    lcd.print("VV           VV");
   }
 
   // Blink LEDs representing choice 
@@ -183,17 +183,17 @@ void clean(){
   if (curr_state != prev_state){
     prev_state = curr_state;
     lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Cleaning...");
     lcd.setCursor(0,1);
-    lcd.print("Press Confirm");
-    lcd.setCursor(0,2);
-    lcd.print("to Stop");
+    lcd.print("RESET to Stop");
     clean_time = millis();
   }
 
   t = millis();
   if(t < cleandur + clean_time){
-    digitalWrite(BLUE, LOW);
-    digitalWrite(WHITE, LOW);
+    digitalWrite(BLUE, HIGH);
+    digitalWrite(WHITE, HIGH);
   }
   if(t > cleandur + clean_time - decel_time){
     pump1.stop();
@@ -203,16 +203,14 @@ void clean(){
   pump1.run();
   pump2.run(); 
 
-  //if (digitalRead(CONFIRM) == HIGH){
-    //while(digitalRead(CONFIRM) == HIGH) {}
-      //curr_state = DISABLED;
-  //}
   if(digitalRead(RESET) == HIGH){
     while(digitalRead(RESET) == HIGH){}
     pump1.stop();
     pump2.stop();
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    digitalWrite(BLUE, LOW);
+    digitalWrite(WHITE, LOW);
     curr_state = DISABLED;
   }
 }
@@ -224,17 +222,17 @@ void set(){
   if (curr_state != prev_state){
     prev_state = curr_state;
     lcd.clear();
-    lcd.setCursor(0,1);
+    lcd.setCursor(0,0);
     lcd.print("Setting Liquids");
-    lcd.setCursor(0,2);
+    lcd.setCursor(0,1);
     lcd.print("Please Wait...");
     setup_time = millis();
   }
 
   t = millis();
   if(t < setupdur + setup_time){
-    digitalWrite(BLUE, LOW);
-    digitalWrite(WHITE, LOW);
+    digitalWrite(BLUE, HIGH);
+    digitalWrite(WHITE, HIGH);
   }
   if(t > setupdur + setup_time - decel_time){
     pump1.stop();
@@ -259,6 +257,8 @@ void set(){
     pump2.stop();
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    digitalWrite(BLUE, LOW);
+    digitalWrite(WHITE, LOW);
     curr_state = DISABLED;
   }
 }
@@ -280,6 +280,7 @@ void idle(){
   if(digitalRead(RESET) == HIGH){
     while(digitalRead(RESET) == HIGH){}
     mode = SETUP;
+    prev_state = NOTSET;
     lcd.clear();
   }
 }
@@ -365,10 +366,11 @@ void dispensing(){
   // initialize dispensing state
   if(state != prior_state){
     prior_state = state;
-    Serial.println(drink_choice);
     digitalWrite(YELLOW, HIGH);
     lcd.setCursor(0,0);
-    lcd.print(dis_drink_list[drink_choice]);
+    lcd.print("Dispensing");
+    lcd.setCursor(0,1);
+    lcd.print(drink_list[drink_choice]);
     dispense_time = millis();
   }
 
