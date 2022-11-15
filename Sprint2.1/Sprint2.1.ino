@@ -50,6 +50,11 @@ const int RESET = 37;
 const int POTSELECT = 1;
 // Lists of Drink Strings
 const char* drink_list[] = {"NULL","Soda Water","Gin","Gin Fizz"};
+// Lists for dispensing
+const int number_of_drinks = 4
+const char* disp_array[][number_of_drinks] = {
+  "NULL",{30000,0,0,0,0,0},{0,30000,0,0,0,0},{60000,45000,0,0,0,0}
+  }; // ADD MORE LATER
 
 // State timings
 uint32_t blink_time;
@@ -63,14 +68,16 @@ uint32_t setup_time;
 int choice_raw;
 int drink_choice;
 int prior_choice; 
+int curr_disp_array;
 
 //duration of pumps being turned on based on drink choice
-long int d1p1dur = 30000;
-long int d1p2dur = 0;
-long int d2p1dur = 0;
-long int d2p2dur = 30000;
-long int d3p1dur = 60000;
-long int d3p2dur = 45000;
+long int p1dur;
+long int p2dur;
+long int p3dur;
+long int p4dur;
+long int p5dur;
+long int p6dur;
+const char* pumpussies[] = {p1dur,p2dur,p3dur,p4dur,p5dur,p6dur};
 
 long int cleandur = 90000;
 long int setupdur = 45000;
@@ -85,7 +92,6 @@ AccelStepper pump3 = AccelStepper(mit, step3Pin, dir3Pin);
 AccelStepper pump4 = AccelStepper(mit, step4Pin, dir4Pin);
 AccelStepper pump5 = AccelStepper(mit, step5Pin, dir5Pin);
 AccelStepper pump6 = AccelStepper(mit, step6Pin, dir6Pin);
-
 
 // user FSM states
 enum use_states{
@@ -120,6 +126,12 @@ uint16_t sel_count;
 uint32_t dis_time;
 uint16_t dis_count;
 
+void get_drink_array(curr_drink){
+  // Pull relevent array based on drink choice
+  return disp_array.at(int(curr_drink));
+  }
+
+
 // MAINTENANCE  FUNCTIONS 
 
 void disabled(){
@@ -151,17 +163,6 @@ void disabled(){
       dis_time = t;
       dis_count++;
   }
-
-/*
-  // When timeout, display maintenance options
-  if (dis_count > 6){
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Select -> Clean");
-    lcd.setCursor(0,1);
-    lcd.print("Confirm -> Set");
-  }
-  */
   
   // Allow switch to maintenance options
   if (digitalRead(CONFIRM) == HIGH){
@@ -408,21 +409,6 @@ void selecting(){
     lcd.clear();
   }
 }
-/*
-void step_1(int dels){
-  digitalWrite(stepPin, HIGH);
-  delayMicroseconds(dels);
-  digitalWrite(stepPin, LOW);
-  delayMicroseconds(dels);
-}
-
-void step_2(int dels){
-  digitalWrite(step2Pin, HIGH);
-  delayMicroseconds(dels);
-  digitalWrite(step2Pin, LOW);
-  delayMicroseconds(dels);
-}
-*/
 
 void dispensing(){
   // What to do while dispensing
@@ -441,82 +427,41 @@ void dispensing(){
 
   // Dispense drinks according to drink_choice
   t = millis();
-  if(drink_choice == 1){
-    //pump 1
-    if(t < dispense_time + d1p1dur){
-      digitalWrite(BLUE, HIGH);
-      } else{
-        digitalWrite(BLUE, LOW);
-      }
-    if(t > (dispense_time + d1p1dur - decel_time)){
+  digitalWrite(BLUE, HIGH);
+  curr_disp_array = get_drink_array(drink_choice);
+  for (i = 0, i < len(curr_disp_array), i++){
+    pumpussies(i) = curr_disp_array(i);
+  }
+  if(t > (dispense_time + p1dur - decel_time)){
       pump1.stop();
     }
-    //pump 2
-    if(t < dispense_time + d1p2dur){
-      digitalWrite(WHITE, HIGH);
-    } else {
-      digitalWrite(WHITE, LOW);
-    }
-    if(t > (dispense_time + d1p2dur - decel_time)){
+  if(t > (dispense_time + p2dur - decel_time)){
       pump2.stop();
     }
-    //both done
-    if(t > dispense_time + d1p1dur && t > dispense_time + d1p2dur){
+  if(t > (dispense_time + p3dur - decel_time)){
+      pump3.stop();
+    }
+  if(t > (dispense_time + p4dur - decel_time)){
+      pump4.stop();
+    }
+  if(t > (dispense_time + p5dur - decel_time)){
+      pump5.stop();
+    }
+  if(t > (dispense_time + p6dur - decel_time)){
+      pump6.stop();
+    }
+  if(
+    t > dispense_time + p1dur && t > dispense_time + p2dur && t > dispense_time + p3dur 
+    && t > dispense_time + p4dur && t > dispense_time + p5dur && t > dispense_time + p6dur){
       state = DONE;
     }
-  }
-  
-  else if(drink_choice == 2){
-    //pump 1
-    if(t < dispense_time + d2p1dur){
-      digitalWrite(BLUE, HIGH);
-    } else{
-      digitalWrite(BLUE, LOW);
-    }
-    if(t > (dispense_time + d2p1dur - decel_time)){
-      pump1.stop();
-    }
-    //pump2
-    if(t < dispense_time + d2p2dur){
-      digitalWrite(WHITE, HIGH);
-    } else {
-      digitalWrite(WHITE, LOW);
-    }
-    if(t > (dispense_time + d2p2dur - decel_time)){
-      pump2.stop();
-    }
-    //both done
-    if(t > dispense_time + d2p1dur && t > dispense_time + d2p2dur){
-      state = DONE;
-    }
-  }
-  
-  else{
-    //pump 1
-    if(t < dispense_time + d3p1dur){
-      digitalWrite(BLUE, HIGH);
-    } else{
-      digitalWrite(BLUE, LOW);
-    }
-    if(t > (dispense_time + d3p1dur - decel_time)){
-      pump1.stop();
-    }
-    //pump 2
-    if(t < dispense_time + d3p2dur){
-      digitalWrite(WHITE, HIGH);
-    } else{
-      digitalWrite(WHITE, LOW);
-    }
-    if(t > (dispense_time + d3p2dur - decel_time)){
-      pump2.stop();
-    }
-    //both done
-    if(t > dispense_time + d3p1dur && t > dispense_time + d3p2dur){
-      state = DONE;
-    }
-  }
+
   pump1.run();
   pump2.run();
+  pump3.run();
+  pump4.run();
+  pump5.run();
+  pump6.run();
 
   //if RESET button is hit, will abort action and return to READY
   if(digitalRead(RESET) == HIGH){
@@ -529,7 +474,7 @@ void dispensing(){
     digitalWrite(YELLOW, LOW);
     digitalWrite(BLUE, LOW);
     digitalWrite(stepPin, LOW);
-    digitalWrite(WHITE, LOW);
+    digitalWrite(WHITE, HIGH);
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
     lcd.clear();
@@ -546,6 +491,7 @@ void done(){
   }
   delay(5000);
   digitalWrite(GREEN, LOW);
+  digitalWrite(WHITE, LOW);
   lcd.clear();
   state = READY;
 }
