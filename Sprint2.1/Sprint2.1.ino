@@ -51,9 +51,10 @@ const int POTSELECT = 1;
 // Lists of Drink Strings
 const char* drink_list[] = {"NULL","Soda Water","Gin","Gin Fizz"};
 // Lists for dispensing
-const int number_of_drinks = 4
-const char* disp_array[][number_of_drinks] = {
-  "NULL",{30000,0,0,0,0,0},{0,30000,0,0,0,0},{60000,45000,0,0,0,0}
+const int number_of_drinks = 4;
+//motor durations
+int* disp_array[number_of_drinks][6] = {
+  {0,0,0,0,0,0},{30000,0,0,0,0,0},{0,30000,0,0,0,0},{60000,45000,0,0,0,0}
   }; // ADD MORE LATER
 
 // State timings
@@ -77,7 +78,7 @@ long int p3dur;
 long int p4dur;
 long int p5dur;
 long int p6dur;
-const char* pumpussies[] = {p1dur,p2dur,p3dur,p4dur,p5dur,p6dur};
+//const char* pumpussies[] = {p1dur,p2dur,p3dur,p4dur,p5dur,p6dur};
 
 long int cleandur = 90000;
 long int setupdur = 45000;
@@ -126,11 +127,12 @@ uint16_t sel_count;
 uint32_t dis_time;
 uint16_t dis_count;
 
-void get_drink_array(curr_drink){
+/*
+int get_drink_array(int curr_drink){
   // Pull relevent array based on drink choice
   return disp_array.at(int(curr_drink));
   }
-
+*/
 
 // MAINTENANCE  FUNCTIONS 
 
@@ -428,31 +430,28 @@ void dispensing(){
   // Dispense drinks according to drink_choice
   t = millis();
   digitalWrite(BLUE, HIGH);
-  curr_disp_array = get_drink_array(drink_choice);
-  for (i = 0, i < len(curr_disp_array), i++){
-    pumpussies(i) = curr_disp_array(i);
-  }
-  if(t > (dispense_time + p1dur - decel_time)){
+int  pumpussies[6] = {disp_array[drink_choice]};
+  if(t > (dispense_time + pumpussies[0] - decel_time)){
       pump1.stop();
     }
-  if(t > (dispense_time + p2dur - decel_time)){
+  if(t > (dispense_time + pumpussies[1] - decel_time)){
       pump2.stop();
     }
-  if(t > (dispense_time + p3dur - decel_time)){
+  if(t > (dispense_time + pumpussies[2] - decel_time)){
       pump3.stop();
     }
-  if(t > (dispense_time + p4dur - decel_time)){
+  if(t > (dispense_time + pumpussies[3] - decel_time)){
       pump4.stop();
     }
-  if(t > (dispense_time + p5dur - decel_time)){
+  if(t > (dispense_time + pumpussies[4] - decel_time)){
       pump5.stop();
     }
-  if(t > (dispense_time + p6dur - decel_time)){
+  if(t > (dispense_time + pumpussies[5] - decel_time)){
       pump6.stop();
     }
   if(
-    t > dispense_time + p1dur && t > dispense_time + p2dur && t > dispense_time + p3dur 
-    && t > dispense_time + p4dur && t > dispense_time + p5dur && t > dispense_time + p6dur){
+    t > dispense_time + pumpussies[0] && t > dispense_time + pumpussies[1] && t > dispense_time + pumpussies[2] 
+    && t > dispense_time + pumpussies[3] && t > dispense_time + pumpussies[4] && t > dispense_time + pumpussies[5]){
       state = DONE;
     }
 
