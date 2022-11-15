@@ -78,13 +78,10 @@ long int p3dur;
 long int p4dur;
 long int p5dur;
 long int p6dur;
-//const char* pumpussies[] = {p1dur,p2dur,p3dur,p4dur,p5dur,p6dur};
-
-long int cleandur = 90000;
-long int setupdur = 45000;
 
 //duration of time used to set liquids in ms
-//long int settime = 4206969;
+long int cleandur = 90000;
+long int setupdur = 45000;
 
 // pump initialization
 AccelStepper pump1 = AccelStepper(mit, stepPin, dirPin);
