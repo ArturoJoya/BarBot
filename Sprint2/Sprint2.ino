@@ -18,31 +18,46 @@
 LiquidCrystal_I2C lcd(0x26,16,3); 
 
 // State LEDs
-const int RED = 13;
-const int YELLOW = 12;
-const int GREEN = 11;
+const int RED = 39;
+const int YELLOW = 41;
+const int GREEN = 43;
 // Pump LEDs - To be replaced by the stepper motor pinouts
-const int BLUE = 10;
-const int WHITE = 9;
+const int BLUE = 45;
+const int WHITE = 47;
 // Pump Motors (2)
-const int dirPin = 2;
-const int stepPin = 3;
-const int dir2Pin = 4;
-const int step2Pin = 5;
+const int dirPin = 23;
+const int stepPin = 2;
+const int dir2Pin = 25;
+const int step2Pin = 3;
+//Expendable code for up to 4 motors
+/* 
+ * const int dir3Pin = 25;
+ * const int stepPpin = 4;
+ * const int dir4Pin = 27;
+ * const int step4Pin = 5;
+*/
+//Expendable code for up to 6 motors
+/* 
+ * const int dir5Pin = 29;
+ * const int step5Pin = 6;
+ * const int dir6Pin = 32;
+ * const int step6Pin = 7;
+*/
 // Motor Parameters
-const int stepsPerRevolution = 200;
+const int max_speed = 800;
+const int acceleration = 50;
 const int mit = 1;
-const int decel_time = 18000;
+const int decel_time = (max_speed / acceleration)*1000;
 // Buttons
-const int SELECT = 8;
-const int CONFIRM = 7;
-const int RESET = 6;
+const int SELECT = 49;
+const int CONFIRM = 51;
+const int RESET = 53;
+
 // Selection Potentiometer
 const int POTSELECT = 1;
 // Lists of Drink Strings
 const char* drink_list[] = {"NULL","Soda Water","Gin","Gin Fizz"};
-//const char* dis_drink_list[] = {
-//  "NULL","Dispensing Soda Water","Dispensing Gin","Dispensing Gin Fizz"};
+const int ena = 22;
 
 // State timings
 uint32_t blink_time;
@@ -65,15 +80,20 @@ long int d2p2dur = 30000;
 long int d3p1dur = 60000;
 long int d3p2dur = 45000;
 
+//duration of pumps being turned on based on set up mode
 long int cleandur = 90000;
-long int setupdur = 45000;
+long int setupdur = 20000;
 
-//duration of time used to set liquids in ms
-//long int settime = 4206969;
 
 // pump initialization
 AccelStepper pump1 = AccelStepper(mit, stepPin, dirPin);
 AccelStepper pump2 = AccelStepper(mit, step2Pin, dir2Pin);
+/*
+ * AccelStepper pump3 = AccelStepper(mit, step3Pin, dir3Pin);
+ * AccelStepper pump4 = AccelStepper(mit, step4Pin, dir4Pin);
+ * AccelStepper pump5 = AccelStepper(mit, step5Pin, dir5Pin);
+ * AccelStepper pump6 = AccelStepper(mit, step6Pin, dir6Pin);
+ */
 
 // user FSM states
 enum use_states{
@@ -116,6 +136,7 @@ void disabled(){
   // Initialization mode
   if (curr_state != prev_state){
     prev_state = curr_state;
+    digitalWrite(ena, HIGH);
     lcd.clear();
     dis_time = millis();
     dis_count = 0;
@@ -139,17 +160,6 @@ void disabled(){
       dis_time = t;
       dis_count++;
   }
-
-/*
-  // When timeout, display maintenance options
-  if (dis_count > 6){
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("Select -> Clean");
-    lcd.setCursor(0,1);
-    lcd.print("Confirm -> Set");
-  }
-  */
   
   // Allow switch to maintenance options
   if (digitalRead(CONFIRM) == HIGH){
@@ -182,6 +192,7 @@ void clean(){
   // Initialize 
   if (curr_state != prev_state){
     prev_state = curr_state;
+    digitalWrite(ena, LOW);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("Cleaning...");
@@ -221,6 +232,7 @@ void set(){
   // Initialize
   if (curr_state != prev_state){
     prev_state = curr_state;
+    digitalWrite(ena, LOW);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("Setting Liquids");
@@ -271,6 +283,7 @@ void idle(){
     digitalWrite(RED, HIGH);
     lcd.setCursor(4,0);
     lcd.print("Ready...");
+    digitalWrite(ena, HIGH);
   }
   if(digitalRead(SELECT) == HIGH){
     while(digitalRead(SELECT) == HIGH){}
@@ -372,6 +385,7 @@ void dispensing(){
     lcd.setCursor(0,1);
     lcd.print(drink_list[drink_choice]);
     dispense_time = millis();
+    digitalWrite(ena, LOW);
   }
 
   // Dispense drinks according to drink_choice
@@ -465,6 +479,7 @@ void dispensing(){
     digitalWrite(BLUE, LOW);
     digitalWrite(stepPin, LOW);
     digitalWrite(WHITE, LOW);
+    digitalWrite(ena, HIGH);
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
     lcd.clear();
@@ -503,11 +518,13 @@ void setup() {
   digitalWrite(WHITE, LOW);
 
   // motor setup
-  pump1.setMaxSpeed(850);
-  pump1.setAcceleration(50);
+  pinMode(ena, OUTPUT);
+  digitalWrite(ena, HIGH);
+  pump1.setMaxSpeed(max_speed);
+  pump1.setAcceleration(acceleration);
   pump1.setSpeed(400);
-  pump2.setMaxSpeed(850);
-  pump2.setAcceleration(50);
+  pump2.setMaxSpeed(max_speed);
+  pump2.setAcceleration(acceleration);
   pump2.setSpeed(400);
 
   // Button Setup
@@ -560,3 +577,49 @@ void loop() {
     break;
   }
 }
+
+/* Copy and pastable code
+ *  
+ *  Drink choice Pump functions
+ *  
+   if(drink_choice == y){
+    //pump 1
+    if(t < dispense_time + dyp1dur){
+      digitalWrite(BLUE, HIGH);
+      } else{
+        digitalWrite(BLUE, LOW);
+      }
+    if(t > (dispense_time + dyp1dur - decel_time)){
+      pump1.stop();
+    }
+    //pump 2
+    if(t < dispense_time + dyp2dur){
+      digitalWrite(WHITE, HIGH);
+    } else {
+      digitalWrite(WHITE, LOW);
+    }
+    if(t > (dispense_time + dyp2dur - decel_time)){
+      pump2.stop();
+    }
+    //both done
+    if(t > dispense_time + dyp1dur && t > dispense_time + dyp2dur){
+      state = DONE;
+    }
+  }
+
+  // pump logic for each drink 
+  //pump x
+    if(t < dispense_time + dipxdur){
+      digitalWrite(BLUE, HIGH);
+      } else{
+        digitalWrite(BLUE, LOW);
+      }
+    if(t > (dispense_time + dipxdur - decel_time)){
+      pump1.stop();
+    }
+
+    void dispense_drink(int drinknum){
+     if(
+    }
+    
+ */
