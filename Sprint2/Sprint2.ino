@@ -30,12 +30,10 @@ const int stepPin = 2;
 const int dir2Pin = 25;
 const int step2Pin = 3;
 //Expendable code for up to 4 motors
-/* 
- * const int dir3Pin = 25;
- * const int stepPpin = 4;
- * const int dir4Pin = 27;
- * const int step4Pin = 5;
-*/
+const int dir3Pin = 25;
+const int step3Pin = 4;
+const int dir4Pin = 27;
+const int step4Pin = 5;
 //Expendable code for up to 6 motors
 /* 
  * const int dir5Pin = 29;
@@ -57,7 +55,8 @@ const int RESET = 53;
 const int POTSELECT = 1;
 // Lists of Drink Strings
 const char* drink_list[] = {"NULL","Soda Water","Gin","Gin Fizz"};
-const int ena = 22;
+const int ena1 = 22;
+const int ena2 = 24;
 
 // State timings
 uint32_t blink_time;
@@ -75,10 +74,18 @@ int prior_choice;
 //duration of pumps being turned on based on drink choice
 long int d1p1dur = 30000;
 long int d1p2dur = 0;
+long int d1p3dur = 20000;
+long int d1p4dur = 0;
+
 long int d2p1dur = 0;
 long int d2p2dur = 30000;
+long int d2p3dur = 0;
+long int d2p4dur = 40000;
+
 long int d3p1dur = 60000;
 long int d3p2dur = 45000;
+long int d3p3dur = 20000;
+long int d3p4dur = 15000;
 
 //duration of pumps being turned on based on set up mode
 long int cleandur = 90000;
@@ -88,13 +95,11 @@ long int setupdur = 20000;
 // pump initialization
 AccelStepper pump1 = AccelStepper(mit, stepPin, dirPin);
 AccelStepper pump2 = AccelStepper(mit, step2Pin, dir2Pin);
-/*
- * AccelStepper pump3 = AccelStepper(mit, step3Pin, dir3Pin);
- * AccelStepper pump4 = AccelStepper(mit, step4Pin, dir4Pin);
- * AccelStepper pump5 = AccelStepper(mit, step5Pin, dir5Pin);
+AccelStepper pump3 = AccelStepper(mit, step3Pin, dir3Pin);
+AccelStepper pump4 = AccelStepper(mit, step4Pin, dir4Pin);
+/* AccelStepper pump5 = AccelStepper(mit, step5Pin, dir5Pin);
  * AccelStepper pump6 = AccelStepper(mit, step6Pin, dir6Pin);
  */
-
 // user FSM states
 enum use_states{
   NONE,
@@ -136,7 +141,8 @@ void disabled(){
   // Initialization mode
   if (curr_state != prev_state){
     prev_state = curr_state;
-    digitalWrite(ena, HIGH);
+    digitalWrite(ena1, HIGH);
+    digitalWrite(ena2, HIGH);
     lcd.clear();
     dis_time = millis();
     dis_count = 0;
@@ -166,12 +172,16 @@ void disabled(){
     while(digitalRead(CONFIRM) == HIGH) {}
     pump1.moveTo(1000000);
     pump2.moveTo(1000000);
+    pump3.moveTo(1000000);
+    pump4.moveTo(1000000);
     curr_state = CLEAN;
   } 
   if(digitalRead(SELECT) == HIGH){
     while(digitalRead(SELECT) == HIGH){}
     pump1.moveTo(1000000);
     pump2.moveTo(1000000);
+    pump3.moveTo(1000000);
+    pump4.moveTo(1000000);
     curr_state = SET;
   }
   if(digitalRead(RESET) == HIGH){
@@ -179,6 +189,8 @@ void disabled(){
     mode = USER;
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    pump3.setCurrentPosition(0);
+    pump4.setCurrentPosition(0);
     lcd.clear();
     lcd.setCursor(4,0);
     lcd.print("Ready...");
@@ -192,7 +204,8 @@ void clean(){
   // Initialize 
   if (curr_state != prev_state){
     prev_state = curr_state;
-    digitalWrite(ena, LOW);
+    digitalWrite(ena1, LOW);
+    digitalWrite(ena2, LOW);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("Cleaning...");
@@ -209,17 +222,25 @@ void clean(){
   if(t > cleandur + clean_time - decel_time){
     pump1.stop();
     pump2.stop();
+    pump3.stop();
+    pump4.stop();
   }
 
   pump1.run();
-  pump2.run(); 
+  pump2.run();
+  pump3.run();
+  pump4.run(); 
 
   if(digitalRead(RESET) == HIGH){
     while(digitalRead(RESET) == HIGH){}
     pump1.stop();
     pump2.stop();
+    pump3.stop();
+    pump4.stop();
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    pump3.setCurrentPosition(0);
+    pump4.setCurrentPosition(0);
     digitalWrite(BLUE, LOW);
     digitalWrite(WHITE, LOW);
     curr_state = DISABLED;
@@ -232,7 +253,8 @@ void set(){
   // Initialize
   if (curr_state != prev_state){
     prev_state = curr_state;
-    digitalWrite(ena, LOW);
+    digitalWrite(ena1, LOW);
+    digitalWrite(ena2, LOW);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("Setting Liquids");
@@ -249,10 +271,14 @@ void set(){
   if(t > setupdur + setup_time - decel_time){
     pump1.stop();
     pump2.stop();
+    pump3.stop();
+    pump4.stop();
   }
 
   pump1.run();
-  pump2.run(); 
+  pump2.run();
+  pump3.run();
+  pump4.run();
 
   // Stop motors and switch stage after set amount of time.
   t = millis();
@@ -260,6 +286,8 @@ void set(){
     curr_state = DISABLED;
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    pump3.setCurrentPosition(0);
+    pump4.setCurrentPosition(0);
   }
   
   // delete later
@@ -267,8 +295,12 @@ void set(){
     while(digitalRead(RESET) == HIGH){}
     pump1.stop();
     pump2.stop();
+    pump3.stop();
+    pump4.stop();
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    pump3.setCurrentPosition(0);
+    pump4.setCurrentPosition(0);
     digitalWrite(BLUE, LOW);
     digitalWrite(WHITE, LOW);
     curr_state = DISABLED;
@@ -283,7 +315,8 @@ void idle(){
     digitalWrite(RED, HIGH);
     lcd.setCursor(4,0);
     lcd.print("Ready...");
-    digitalWrite(ena, HIGH);
+    digitalWrite(ena1, HIGH);
+    digitalWrite(ena2, HIGH);
   }
   if(digitalRead(SELECT) == HIGH){
     while(digitalRead(SELECT) == HIGH){}
@@ -341,6 +374,8 @@ void selecting(){
     state = DISPENSING;
     pump1.moveTo(1000000);
     pump2.moveTo(1000000);
+    pump3.moveTo(1000000);
+    pump4.moveTo(1000000);
   } else if(sel_count == 20 || drink_choice == 0){
     state = READY;
   } else if(digitalRead(RESET) == HIGH){
@@ -385,7 +420,8 @@ void dispensing(){
     lcd.setCursor(0,1);
     lcd.print(drink_list[drink_choice]);
     dispense_time = millis();
-    digitalWrite(ena, LOW);
+    digitalWrite(ena1, LOW);
+    digitalWrite(ena2, LOW);
   }
 
   // Dispense drinks according to drink_choice
@@ -409,8 +445,26 @@ void dispensing(){
     if(t > (dispense_time + d1p2dur - decel_time)){
       pump2.stop();
     }
+    //pump 3
+    if(t < dispense_time + d1p3dur){
+      digitalWrite(BLUE, HIGH);
+    } else {
+      digitalWrite(BLUE, LOW);
+    }
+    if(t > (dispense_time + d1p3dur - decel_time)){
+      pump3.stop();
+    }
+    //pump 4
+    if(t < dispense_time + d1p4dur){
+      digitalWrite(WHITE, HIGH);
+    } else {
+      digitalWrite(WHITE, LOW);
+    }
+    if(t > (dispense_time + d1p4dur - decel_time)){
+      pump4.stop();
+    }
     //both done
-    if(t > dispense_time + d1p1dur && t > dispense_time + d1p2dur){
+    if(t > dispense_time + d1p1dur && t > dispense_time + d1p2dur && t > dispense_time + d1p3dur && t > dispense_time + d1p4dur){
       state = DONE;
     }
   }
@@ -434,8 +488,26 @@ void dispensing(){
     if(t > (dispense_time + d2p2dur - decel_time)){
       pump2.stop();
     }
+    //pump 3
+    if(t < dispense_time + d2p3dur){
+      digitalWrite(BLUE, HIGH);
+    } else {
+      digitalWrite(BLUE, LOW);
+    }
+    if(t > (dispense_time + d2p3dur - decel_time)){
+      pump3.stop();
+    }
+    //pump 4
+    if(t < dispense_time + d2p4dur){
+      digitalWrite(WHITE, HIGH);
+    } else {
+      digitalWrite(WHITE, LOW);
+    }
+    if(t > (dispense_time + d2p4dur - decel_time)){
+      pump4.stop();
+    }
     //both done
-    if(t > dispense_time + d2p1dur && t > dispense_time + d2p2dur){
+    if(t > dispense_time + d2p1dur && t > dispense_time + d2p2dur && t > dispense_time + d2p3dur && t > dispense_time + d2p4dur){
       state = DONE;
     }
   }
@@ -459,13 +531,33 @@ void dispensing(){
     if(t > (dispense_time + d3p2dur - decel_time)){
       pump2.stop();
     }
+    //pump 3
+    if(t < dispense_time + d3p3dur){
+      digitalWrite(BLUE, HIGH);
+    } else {
+      digitalWrite(BLUE, LOW);
+    }
+    if(t > (dispense_time + d3p3dur - decel_time)){
+      pump3.stop();
+    }
+    //pump 4
+    if(t < dispense_time + d3p4dur){
+      digitalWrite(WHITE, HIGH);
+    } else {
+      digitalWrite(WHITE, LOW);
+    }
+    if(t > (dispense_time + d3p4dur - decel_time)){
+      pump4.stop();
+    }
     //both done
-    if(t > dispense_time + d3p1dur && t > dispense_time + d3p2dur){
+    if(t > dispense_time + d3p1dur && t > dispense_time + d3p2dur && t > dispense_time + d3p3dur && t > dispense_time + d3p4dur){
       state = DONE;
     }
   }
   pump1.run();
   pump2.run();
+  pump3.run();
+  pump4.run();
 
   //if RESET button is hit, will abort action and return to READY
   if(digitalRead(RESET) == HIGH){
@@ -479,9 +571,12 @@ void dispensing(){
     digitalWrite(BLUE, LOW);
     digitalWrite(stepPin, LOW);
     digitalWrite(WHITE, LOW);
-    digitalWrite(ena, HIGH);
+    digitalWrite(ena1, HIGH);
+    digitalWrite(ena2, HIGH);
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    pump3.setCurrentPosition(0);
+    pump4.setCurrentPosition(0);
     lcd.clear();
   }
 }
@@ -518,14 +613,22 @@ void setup() {
   digitalWrite(WHITE, LOW);
 
   // motor setup
-  pinMode(ena, OUTPUT);
-  digitalWrite(ena, HIGH);
+  pinMode(ena1, OUTPUT);
+  pinMode(ena2, OUTPUT);
+  digitalWrite(ena1, HIGH);
+  digitalWrite(ena2, HIGH);
   pump1.setMaxSpeed(max_speed);
   pump1.setAcceleration(acceleration);
   pump1.setSpeed(400);
   pump2.setMaxSpeed(max_speed);
   pump2.setAcceleration(acceleration);
   pump2.setSpeed(400);
+  pump3.setMaxSpeed(max_speed);
+  pump3.setAcceleration(acceleration);
+  pump3.setSpeed(400);
+  pump4.setMaxSpeed(max_speed);
+  pump4.setAcceleration(acceleration);
+  pump4.setSpeed(400);
 
   // Button Setup
   pinMode(SELECT, INPUT);
