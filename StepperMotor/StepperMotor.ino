@@ -11,7 +11,7 @@
 #define dir4Pin 8
 #define step4Pin 9
 #define mit 1
-#define reset 8
+#define reset 12
 
 #define stepsPerRevolution 200
 
@@ -68,8 +68,8 @@ void loop() {
     pump2.setSpeed(0);
   }
   pump1.run();
-  //pump2.run();
+  pump2.run();
   pump3.run();
-  //pump4.run();
+  pump4.run();
 
 }
