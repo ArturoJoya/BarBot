@@ -14,12 +14,11 @@ const int GREEN = 43;
 // Pump LEDs - To be replaced by the stepper motor pinouts
 const int BLUE = 45;
 const int WHITE = 47;
-// Pump Motors (2)
+// Pump Motors (4)
 const int dirPin = 23;
 const int stepPin = 2;
 const int dir2Pin = 25;
 const int step2Pin = 3;
-//Expendable code for up to 4 motors
 const int dir3Pin = 25;
 const int step3Pin = 4;
 const int dir4Pin = 27;
@@ -33,7 +32,7 @@ const int step4Pin = 5;
 */
 // Motor Parameters
 const int max_speed = 800;
-const int acceleration = 50;
+const int acceleration = 400;
 const int mit = 1;
 const int decel_time = (max_speed / acceleration)*1000;
 //motor driver enables
@@ -51,7 +50,7 @@ const int num_of_drinks = 4;
 const int num_of_motors = 4;
 const char* drink_list[num_of_drinks] = {"NULL","Soda Water","Gin","Gin Fizz"};
 long drink_array[num_of_drinks][num_of_motors] = {
-  {0,0,0,0},{30000,0,20000,0},{0,30000,0,15000},{60000,45000,10000,20000}
+  {0,0,0,0},{30000,0,20000,0},{0,25000,0,10000},{30000,25000,2100,20000}
 };
 long pump_durs[num_of_motors];
 
@@ -70,22 +69,6 @@ long int setupdur = 20000;
 int choice_raw;
 int drink_choice;
 int prior_choice; 
-
-//duration of pumps being turned on based on drink choice
-long int d1p1dur = 30000;
-long int d1p2dur = 0;
-long int d1p3dur = 20000;
-long int d1p4dur = 0;
-
-long int d2p1dur = 0;
-long int d2p2dur = 30000;
-long int d2p3dur = 0;
-long int d2p4dur = 40000;
-
-long int d3p1dur = 60000;
-long int d3p2dur = 45000;
-long int d3p3dur = 20000;
-long int d3p4dur = 15000;
 
 // pump initialization
 AccelStepper pump1 = AccelStepper(mit, stepPin, dirPin);
@@ -404,10 +387,9 @@ void dispensing(){
     dispense_time = millis();
     digitalWrite(ena1, LOW);
     digitalWrite(ena2, LOW);
-    long debugger;
     for(int pd = 0; pd < num_of_motors; pd++){
       pump_durs[pd] = drink_array[drink_choice][pd];
-      Serial.print("dur = ");
+      Serial.print("pump dur - ");
       Serial.print(pump_durs[pd]);
       Serial.println(",");
     }
@@ -439,6 +421,10 @@ void dispensing(){
   //if RESET button is hit, will abort action and return to READY
   if(digitalRead(RESET) == HIGH){
     while(digitalRead(RESET) == HIGH){}
+    pump1.stop();
+    pump2.stop();
+    pump3.stop();
+    pump4.stop();
     state = READY;
   }
   
@@ -554,49 +540,3 @@ void loop() {
     break;
   }
 }
-
-/* Copy and pastable code
- *  
- *  Drink choice Pump functions
- *  
-   if(drink_choice == y){
-    //pump 1
-    if(t < dispense_time + dyp1dur){
-      digitalWrite(BLUE, HIGH);
-      } else{
-        digitalWrite(BLUE, LOW);
-      }
-    if(t > (dispense_time + dyp1dur - decel_time)){
-      pump1.stop();
-    }
-    //pump 2
-    if(t < dispense_time + dyp2dur){
-      digitalWrite(WHITE, HIGH);
-    } else {
-      digitalWrite(WHITE, LOW);
-    }
-    if(t > (dispense_time + dyp2dur - decel_time)){
-      pump2.stop();
-    }
-    //both done
-    if(t > dispense_time + dyp1dur && t > dispense_time + dyp2dur){
-      state = DONE;
-    }
-  }
-
-  // pump logic for each drink 
-  //pump x
-    if(t < dispense_time + dipxdur){
-      digitalWrite(BLUE, HIGH);
-      } else{
-        digitalWrite(BLUE, LOW);
-      }
-    if(t > (dispense_time + dipxdur - decel_time)){
-      pump1.stop();
-    }
-
-    void dispense_drink(int drinknum){
-     if(
-    }
-    
- */
