@@ -389,9 +389,6 @@ void dispensing(){
     digitalWrite(ena2, LOW);
     for(int pd = 0; pd < num_of_motors; pd++){
       pump_durs[pd] = drink_array[drink_choice][pd];
-      Serial.print("pump dur - ");
-      Serial.print(pump_durs[pd]);
-      Serial.println(",");
     }
   }
 
