@@ -2,16 +2,16 @@
 #include <AccelStepper.h>
 
 // Define stepper motor connections and steps per revolution:
-#define dirPin 2
-#define stepPin 3
-#define dir2Pin 4
-#define step2Pin 5
-#define dir3Pin 7
-#define step3Pin 6
-#define dir4Pin 8
-#define step4Pin 9
+#define dirPin 23
+#define stepPin 2
+#define dir2Pin 25
+#define step2Pin 3
+#define dir3Pin 27
+#define step3Pin 4
+#define dir4Pin 29
+#define step4Pin 5
 #define mit 1
-#define reset 12
+#define reset 30
 
 #define stepsPerRevolution 200
 
@@ -68,8 +68,8 @@ void loop() {
     pump2.setSpeed(0);
   }
   pump1.run();
-  pump2.run();
-  pump3.run();
-  pump4.run();
+  //pump2.run();
+  //pump3.run();
+  //pump4.run();
 
 }
