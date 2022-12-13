@@ -405,7 +405,7 @@ void selecting(){
   }
 
   if (sel_count > 5){
-    lcd.clear;
+    lcd.clear();
     lcd.setCursor(0,1);
     lcd.print("Please Confirm");
   }
