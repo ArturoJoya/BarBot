@@ -48,14 +48,31 @@ const int POTSELECT = 1;
 // FOR DEMO DAY: Pump 1 - Soda Water, Pump 2 - Citrus Gin, Pump 3 - Herbal Gin, Pump 4 - Honey
 
 // Lists of Drink Strings
-const int num_of_drinks = 6;
+const int num_of_drinks = 8;
 const int num_of_motors = 4;
+/*
 const char* drink_list[num_of_drinks] = {
   "NULL","Citrus Gin","Herbal Gin","Citrus Gin Soda","Herbal Gin Soda","Citrus Bee's Knees","Herbal Bee's Knees"
   };
 long drink_array[num_of_drinks][num_of_motors] = {
   {0,0,0,0},{0,10000,0,0},{0,0,10000,0},{60000,10000,0,0},{60000,0,10000,0},{0,10000,0,20000},{0,0,10000,20000}
 };
+*/
+
+// Demo Day Alt
+const char* drink_list[num_of_drinks] = {
+  "NULL","Soda Water","Citrus Gin","Herbal Gin","Citrus Gin Soda","Herbal Gin Soda","Citrus Bee's Knees","Herbal Bee's Knees"
+  };
+long drink_array[num_of_drinks][num_of_motors] = {
+  {0,0,0,0},{40000,0,0,0},{0,20000,0,0},{0,0,10000,0},{45000,20000,0,0},{45000,0,10000,0},{0,20000,0,20000},{0,0,10000,20000}
+};
+
+/*Calibration Numbers
+ * 1/2 oz = 8000;
+ * 1 oz = 14000;
+ * 1.5 oz = 18000;
+ * 2 oz = 260000
+ */
 long pump_durs[num_of_motors];
 
 // State timings
@@ -71,9 +88,13 @@ uint32_t clean_time;
 uint32_t setup_time;
 // Pump durations during setup mode
 long int cleandur = 90000;
-long int setupdur = 12000;
+long int setupdur = 9000;
 
 // Choice instantiation
+int temp_choice;
+int temp_choice_raw;
+int new_temp_choice;
+int new_temp_choice_raw;
 int choice_raw;
 int drink_choice;
 int prior_choice; 
@@ -300,11 +321,27 @@ void idle(){
     lcd.print("Ready...");
     digitalWrite(ena1, HIGH);
     digitalWrite(ena2, HIGH);
+    temp_choice_raw = analogRead(POTSELECT);
+    temp_choice = temp_choice_raw/((1028/num_of_drinks) + 1);
+    lcd.setCursor(0,1);
+    lcd.print(drink_list[temp_choice]);
+  }
+  
+  new_temp_choice_raw = analogRead(POTSELECT);
+  new_temp_choice = new_temp_choice_raw/((1028/num_of_drinks) + 1);
+  if(new_temp_choice != temp_choice){
+    lcd.clear();
+    lcd.setCursor(4,0);
+    lcd.print("Ready...");
+    temp_choice = new_temp_choice;
+    lcd.setCursor(0,1);
+    lcd.print(drink_list[temp_choice]);
   }
   if(digitalRead(SELECT) == HIGH){
     while(digitalRead(SELECT) == HIGH){}
     state = SELECTING;
     lcd.clear();
+    digitalWrite(RED, LOW);
   }
   if(digitalRead(RESET) == HIGH){
     while(digitalRead(RESET) == HIGH){}
@@ -343,6 +380,7 @@ void selecting(){
       digitalWrite(GREEN, !digitalRead(GREEN));
     sel_time = t;
     sel_count++;
+    }
   }
 
   // Check for state transition
