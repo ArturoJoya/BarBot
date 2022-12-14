@@ -11,7 +11,7 @@ LiquidCrystal_I2C lcd(0x26,16,3);
 const int RED = 39;
 const int YELLOW = 41;
 const int GREEN = 43;
-// Pump LEDs - To be replaced by the stepper motor pinouts
+// Mode LEDs
 const int BLUE = 45;
 const int WHITE = 47;
 // Pump Motors (4)
@@ -58,12 +58,16 @@ long pump_durs[num_of_motors];
 uint32_t blink_time;
 uint32_t dispense_time;
 uint16_t BLINK_INT = 500;
-// Setup timings
+uint32_t sel_time;
+uint16_t sel_count;
+uint32_t dis_time;
+uint16_t dis_count;
+// Maintainance timings
 uint32_t clean_time;
 uint32_t setup_time;
-//duration of pumps being turned on based on set up mode
+// Pump durations during setup mode
 long int cleandur = 90000;
-long int setupdur = 20000;
+long int setupdur = 12000;
 
 // Choice instantiation
 int choice_raw;
@@ -104,12 +108,6 @@ enum set_states{
   SET
 };
 set_states prev_state, curr_state;
-
-
-uint32_t sel_time;
-uint16_t sel_count;
-uint32_t dis_time;
-uint16_t dis_count;
 
 // MAINTENANCE  FUNCTIONS 
 
@@ -322,7 +320,7 @@ void selecting(){
   if (state != prior_state){
     prior_state = state;
     choice_raw = analogRead(POTSELECT);
-    drink_choice = choice_raw/257;
+    drink_choice = choice_raw/((1028/num_of_drinks) + 1);
     lcd.setCursor(0,0);
     lcd.print("Current Drink:");
     lcd.setCursor(0,1);
@@ -335,15 +333,10 @@ void selecting(){
   // Blink LEDs representing choice
   t = millis();
   if(t >= sel_time + BLINK_INT){
-    if(drink_choice == 1){
+    if(t >= sel_time + BLINK_INT){
       digitalWrite(RED, !digitalRead(RED));
-    } else if(drink_choice == 2){
-      digitalWrite(RED, LOW);
       digitalWrite(YELLOW, !digitalRead(YELLOW));
-    } else{
-      digitalWrite(RED, LOW);
       digitalWrite(GREEN, !digitalRead(GREEN));
-    }
     sel_time = t;
     sel_count++;
   }

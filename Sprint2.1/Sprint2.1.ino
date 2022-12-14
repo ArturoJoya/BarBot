@@ -18,24 +18,24 @@
 LiquidCrystal_I2C lcd(0x26,16,3); 
 
 // State LEDs
-const int RED = 23;
-const int YELLOW = 25;
-const int GREEN = 27;
+const int RED = 39;
+const int YELLOW = 41;
+const int GREEN = 43;
 // Pump LEDs - To be replaced by the stepper motor pinouts
-const int BLUE = 29;
-const int WHITE = 31;
+const int BLUE = 45;
+const int WHITE = 47;
 // Pump Motors (6)
-const int dirPin = 22;
+const int dirPin = 23;
 const int stepPin = 2;
-const int dir2Pin = 24;
+const int dir2Pin = 25;
 const int step2Pin = 3;
-const int dir3Pin = 26;
+const int dir3Pin = 27;
 const int step3Pin = 4;
-const int dir4Pin = 28;
+const int dir4Pin = 29;
 const int step4Pin = 5;
-const int dir5Pin = 30;
+const int dir5Pin = 31;
 const int step5Pin = 6;
-const int dir6Pin = 32;
+const int dir6Pin = 33;
 const int step6Pin = 7;
 // Motor Parameters
 const int max_speed = 1000;
@@ -43,18 +43,21 @@ const int acceleration = 50;
 const int mit = 1;
 const int decel_time = (max_speed / acceleration)*1000;
 // Buttons
-const int SELECT = 33;
-const int CONFIRM = 35;
-const int RESET = 37;
+const int SELECT = 49;
+const int CONFIRM = 51;
+const int RESET = 53;
 // Selection Potentiometer
 const int POTSELECT = 1;
+//motor driver enables
+const int ena1 = 22;
+const int ena2 = 24;
 // Lists of Drink Strings
 const char* drink_list[] = {"NULL","Soda Water","Gin","Gin Fizz"};
 // Lists for dispensing
 const int number_of_drinks = 4;
 //motor durations
-int* disp_array[number_of_drinks][6] = {
-  {0,0,0,0,0,0},{30000,0,0,0,0,0},{0,30000,0,0,0,0},{60000,45000,0,0,0,0}
+long int* disp_array[number_of_drinks][6] = {
+  {0,0,0,0,0,0},{30000,0,20000,0,0,0},{0,30000,0,15000,0,0},{60000,45000,10000,20000,0,0}
   }; // ADD MORE LATER
 
 // State timings
@@ -140,6 +143,8 @@ void disabled(){
   // Initialization mode
   if (curr_state != prev_state){
     prev_state = curr_state;
+    digitalWrite(ena1, HIGH);
+    digitalWrite(ena2, HIGH);
     lcd.clear();
     dis_time = millis();
     dis_count = 0;
@@ -205,6 +210,8 @@ void clean(){
   // Initialize 
   if (curr_state != prev_state){
     prev_state = curr_state;
+    digitalWrite(ena1, LOW);
+    digitalWrite(ena2, LOW);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("Cleaning...");
@@ -281,6 +288,8 @@ void set(){
   // Initialize
   if (curr_state != prev_state){
     prev_state = curr_state;
+    digitalWrite(ena1, LOW);
+    digitalWrite(ena2, LOW);
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("Setting Liquids");
@@ -371,6 +380,8 @@ void idle(){
     digitalWrite(RED, HIGH);
     lcd.setCursor(4,0);
     lcd.print("Ready...");
+    digitalWrite(ena1, HIGH);
+    digitalWrite(ena2, HIGH);
   }
   if(digitalRead(SELECT) == HIGH){
     while(digitalRead(SELECT) == HIGH){}
@@ -405,7 +416,7 @@ void selecting(){
   }
 
   if (sel_count > 5){
-    lcd.clear;
+    lcd.clear();
     lcd.setCursor(0,1);
     lcd.print("Please Confirm");
   }
@@ -465,12 +476,18 @@ void dispensing(){
     lcd.setCursor(0,1);
     lcd.print(drink_list[drink_choice]);
     dispense_time = millis();
+    digitalWrite(ena1, LOW);
+    digitalWrite(ena2, LOW);
   }
 
   // Dispense drinks according to drink_choice
   t = millis();
   digitalWrite(BLUE, HIGH);
   int  pumpussies[6] = {disp_array[drink_choice]};
+  for(int pp = 0; pp < 6; pp++){
+    Serial.print(pumpussies[pp]);
+  }
+  Serial.println(",");
   if(t > (dispense_time + pumpussies[0] - decel_time)){
       pump1.stop();
     }
@@ -516,6 +533,12 @@ void dispensing(){
     digitalWrite(WHITE, HIGH);
     pump1.setCurrentPosition(0);
     pump2.setCurrentPosition(0);
+    pump3.setCurrentPosition(0);
+    pump4.setCurrentPosition(0);
+    pump5.setCurrentPosition(0);
+    pump6.setCurrentPosition(0);
+    digitalWrite(ena1, HIGH);
+    digitalWrite(ena2, HIGH);
     lcd.clear();
   }
 }
@@ -553,12 +576,22 @@ void setup() {
   digitalWrite(WHITE, LOW);
 
   // motor setup
+  pinMode(ena1, OUTPUT);
+  pinMode(ena2, OUTPUT);
+  digitalWrite(ena1, HIGH);
+  digitalWrite(ena2, HIGH);
   pump1.setMaxSpeed(max_speed);
   pump1.setAcceleration(acceleration);
   pump1.setSpeed(400);
   pump2.setMaxSpeed(max_speed);
   pump2.setAcceleration(acceleration);
   pump2.setSpeed(400);
+  pump3.setMaxSpeed(max_speed);
+  pump3.setAcceleration(acceleration);
+  pump3.setSpeed(400);
+  pump4.setMaxSpeed(max_speed);
+  pump4.setAcceleration(acceleration);
+  pump4.setSpeed(400);
 
   // Button Setup
   pinMode(SELECT, INPUT);
