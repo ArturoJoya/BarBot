@@ -45,12 +45,16 @@ const int RESET = 53;
 // Selection Potentiometer
 const int POTSELECT = 1;
 
+// FOR DEMO DAY: Pump 1 - Soda Water, Pump 2 - Citrus Gin, Pump 3 - Herbal Gin, Pump 4 - Honey
+
 // Lists of Drink Strings
-const int num_of_drinks = 4;
+const int num_of_drinks = 6;
 const int num_of_motors = 4;
-const char* drink_list[num_of_drinks] = {"NULL","Soda Water","Gin","Gin Fizz"};
+const char* drink_list[num_of_drinks] = {
+  "NULL","Citrus Gin","Herbal Gin","Citrus Gin Soda","Herbal Gin Soda","Citrus Bee's Knees","Herbal Bee's Knees"
+  };
 long drink_array[num_of_drinks][num_of_motors] = {
-  {0,0,0,0},{30000,0,20000,0},{0,25000,0,10000},{30000,25000,2100,20000}
+  {0,0,0,0},{0,10000,0,0},{0,0,10000,0},{60000,10000,0,0},{60000,0,10000,0},{0,10000,0,20000},{0,0,10000,20000}
 };
 long pump_durs[num_of_motors];
 
